@@ -1,0 +1,5 @@
+# M8C-01 — Integration and regression
+
+Approved by the user M8 master prompt; follows M8A-01 and M8B-01 PASS. Reuse actual opt-in suites and ownership/OID-checked disposable PostgreSQL 17 fixtures; never migrate/seed/bootstrap or run down/force against mapatu_dev. No Docker volume operations.
+
+Run M5B login/session lifecycle, M6 full tenancy, M7 full RBAC and M7S provisioning/PTY suites with the current binary. Preserve existing suites: assign their fixture login budgets high enough for repeated security cases, and add explicit isolated low-budget scenarios for actual normalization and successful-login throttling. Test authoritative non-ASCII normalization, fail-closed normalization, actual CLI/server login/health/headers/preflight/timeout/shutdown behavior against the existing disposable fixture only. Run build/vet/default tests and relevant race tests, review documentation/generated contracts, inspect final diff and obtain separate-context M8C/final review. Clean all owned resources and leave changes unstaged.

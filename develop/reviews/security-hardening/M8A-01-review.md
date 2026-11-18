@@ -1,0 +1,12 @@
+# M8A-01 Review
+
+- Scope: login admission policy, handler/service/store/registry integration, generic errors/events and security documentation.
+- Status: **PASS** for M8A. Separate-context reviewer `/root/security_review` inspected tracked and new source/tests/docs and independently ran the focused suite. No unresolved high/medium findings.
+- Findings addressed during implementation: minimum limiter capacity two (one record alone prevents any complete login); deterministic full-pair recovery test added. HTTP Retry-After checks accept a positive bounded value because deterministic limiter tests verify exact expiration separately.
+- Security severity: missing runtime login limits corrected; no remaining stage-blocking defect. Capacity pressure can temporarily reduce availability and fixed-window identifier abuse can temporarily deny victim logins; both explicitly documented.
+- Files changed: shared/security limiter/events/tests; authentication handler, service/store and registry; config minimum; route/observability/service fixtures; README pair and architecture/configuration/operations/authentication/API-standard docs.
+- Tests executed: `GOCACHE=/private/tmp/hris-m8-go-cache go test -count=1 ./internal/shared/security ./internal/routes ./internal/usecases/authentication ./internal/shared/observability` PASS; `go test -race -count=1 ./internal/shared/security` with same cache PASS; config tests PASS; diff whitespace PASS. Reviewer independently ran focused packages with a separate temporary cache: PASS.
+- Evidence: concurrent threshold exact admissions, capped map and heap under churn, context cancellation, fixed-window expiration, cap2 recovery, real Gin generic 429/Retry-After, case/space normalization fixture, distinct identifiers and trusted/untrusted forwarded IPs, single completion/security events and no credential/identifier leakage. Authoritative PostgreSQL locale normalization is source-verified here, runtime validation in M8C.
+- Documentation impact: records all-attempt semantics for legacy failure-named settings, existing defaults/overrides, bounded capacity behavior and process-local/multi-instance limitations.
+- Outstanding final acceptance: pinned OpenAPI regeneration in progress; disposable PostgreSQL/session/RBAC/provisioning regressions assigned to M8C, not claimed tested in this review.
+- Next action: continue M8B autonomously. No stage/commit.

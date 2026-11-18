@@ -1,0 +1,9 @@
+# M7E-01 — RBAC Business Policy v1.0 review
+
+**PASS for the policy implementation.** The approved matrix resolves B1 and direct scope containment resolves B2. B3 is explicitly deferred and denied. See the [approved input](../../inputs/tenant-access-rbac/M7E-01-policy-finalization.md) and [canonical policy](../../../documentation/database/tenant-membership-rbac-schema.md).
+
+Migration 000015 adds eight deterministic permission identities and 19 explicit grants. The fixed six-role catalog is preserved. The evaluator uses one parameterized statement to verify the active resource owners, membership, user, grant and assignment. It checks direct tenant, organization and branch containment and keeps platform decisions separate. Route inspection found no assignment writer. The PostgreSQL review used the existing owner and user keys and retained the configured query timeout.
+
+The primary agent ran `go build ./...`, `go vet ./...`, `go test -count=1 ./...` and `git diff --check`. The expanded disposable PostgreSQL 17 integration passed using `M7_INTEGRATION=1 M7_STAGE=full go test -count=1 -run '^TestTenantRBACPostgresIntegration$' -v ./internal/infrastructure/migration` in `m7_verify_6648d5d378564bd09454ac78dba4bcc3`. The test checked exact codes and grants, all four scopes, direct owner validation, no child traversal or implicit grants, inactive states, next-request grant removal, a stored work-location bearer route and expired/revoked sessions. It verified 15→14 preserves unrelated grants and assignments, rejects dependencies from later grants atomically, and passed 15→9 and reapply through 15. The owned database was removed.
+
+The separate-context reviewer inspected the implementation and primary-agent test evidence. The reviewer found no blocking security or migration defect and requested an evidence link in the canonical contract, which was added before closing this checkpoint. The final C and D evidence is recorded in their revised reviews.

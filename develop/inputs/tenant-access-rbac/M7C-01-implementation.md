@@ -1,0 +1,5 @@
+# M7C-01 — Exact-scope authorization foundation
+
+Approved by the user's recovered contract: proceed with supported authorization mechanics while unresolved business permission/inheritance acceptance remains BLOCKED. [M7B schema PASS](../../reviews/tenant-access-rbac/M7B-01-review.md).
+
+Reuse M5 identity and shared database pool; add a small database-backed permission evaluator and HTTP boundary in existing layers. Require exact owner tuple, active membership/tenant/assignment and explicit mapping. Reject unknown/missing permission, inactive state, scope mismatch, inheritance and implicit platform bypass. No production permission catalog/grants, administrative endpoint, session changes, cache or generic policy engine. Verify mechanics using disposable-only fixture permissions; distinguish mechanical positive checks from approval of business permissions. Cover missing auth401, denied403, operational errors500 and abort semantics. Review and fix within scope; synchronize reference docs. No staging or commit.

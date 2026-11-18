@@ -1,0 +1,318 @@
+basePath: /
+definitions:
+  dtos.FilterResponse:
+    properties:
+      isActive:
+        type: boolean
+      role:
+        type: string
+    type: object
+  dtos.PaginationResponse:
+    properties:
+      has_next:
+        type: boolean
+      has_previous:
+        type: boolean
+      limit:
+        type: integer
+      next_url:
+        type: string
+      page:
+        type: integer
+      prev_url:
+        type: string
+      total:
+        type: integer
+    type: object
+  dtos.SortingResponse:
+    properties:
+      direction:
+        type: string
+      order_by:
+        type: string
+    type: object
+  requests.LoginRequest:
+    properties:
+      email:
+        example: user@example.com
+        type: string
+      password:
+        example: <password>
+        format: password
+        type: string
+    required:
+    - email
+    - password
+    type: object
+  response.ErrorBody:
+    properties:
+      code:
+        type: string
+      details: {}
+      message:
+        type: string
+    type: object
+  response.ErrorResponseBody:
+    properties:
+      error:
+        $ref: '#/definitions/response.ErrorBody'
+    type: object
+  response.ResponseMeta:
+    properties:
+      filters:
+        $ref: '#/definitions/dtos.FilterResponse'
+      pagination:
+        $ref: '#/definitions/dtos.PaginationResponse'
+      sorting:
+        $ref: '#/definitions/dtos.SortingResponse'
+    type: object
+  response.SuccessResponseBody:
+    properties:
+      data: {}
+      message:
+        type: string
+      meta:
+        $ref: '#/definitions/response.ResponseMeta'
+      success:
+        type: boolean
+    type: object
+  responses.AuthUser:
+    properties:
+      display_name:
+        example: Example User
+        type: string
+      email:
+        example: user@example.com
+        type: string
+      email_verified_at:
+        type: string
+      id:
+        example: 00000000-0000-4000-8000-000000000001
+        type: string
+    type: object
+  responses.LoginResponse:
+    properties:
+      access_token:
+        example: <opaque-access-token>
+        type: string
+      expires_at:
+        type: string
+      token_type:
+        example: Bearer
+        type: string
+      user:
+        $ref: '#/definitions/responses.AuthUser'
+    type: object
+info:
+  contact:
+    email: juandescka@gmail.com
+    name: Juan Descka
+  description: Mapatu HRIS operational API and global identity authentication foundation.
+  title: Mapatu Backend API
+  version: "1.0"
+paths:
+  /health:
+    get:
+      consumes:
+      - application/json
+      description: Returns the liveness status without checking dependencies.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Application is healthy
+          schema:
+            $ref: '#/definitions/response.SuccessResponseBody'
+      summary: Check application health
+      tags:
+      - Operations
+  /ready:
+    get:
+      consumes:
+      - application/json
+      description: Returns readiness after a bounded primary database check.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Application is ready
+          schema:
+            $ref: '#/definitions/response.SuccessResponseBody'
+        "503":
+          description: Service is not ready (SERVICE_NOT_READY)
+          schema:
+            $ref: '#/definitions/response.ErrorResponseBody'
+      summary: Check application readiness
+      tags:
+      - Operations
+  /v1/auth/login:
+    post:
+      consumes:
+      - application/json
+      description: Returns a database-backed opaque bearer token. Process-local IP
+        and normalized-identifier attempt limits return 429 with Retry-After in seconds.
+        Requires deployed identity migrations; no registration or default account
+        exists.
+      parameters:
+      - description: Email and password
+        in: body
+        name: credentials
+        required: true
+        schema:
+          $ref: '#/definitions/requests.LoginRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.SuccessResponseBody'
+            - properties:
+                data:
+                  $ref: '#/definitions/responses.LoginResponse'
+              type: object
+        "400":
+          description: Malformed JSON (BAD_REQUEST)
+          schema:
+            $ref: '#/definitions/response.ErrorResponseBody'
+        "401":
+          description: Invalid email or password (UNAUTHORIZED)
+          schema:
+            $ref: '#/definitions/response.ErrorResponseBody'
+        "413":
+          description: Body too large (REQUEST_BODY_TOO_LARGE)
+          schema:
+            $ref: '#/definitions/response.ErrorResponseBody'
+        "415":
+          description: Unsupported media type (UNSUPPORTED_MEDIA_TYPE)
+          schema:
+            $ref: '#/definitions/response.ErrorResponseBody'
+        "422":
+          description: Invalid credentials input (VALIDATION_FAILED)
+          schema:
+            $ref: '#/definitions/response.ErrorResponseBody'
+        "429":
+          description: Login throttled (RATE_LIMIT_EXCEEDED); Retry-After header gives
+            whole seconds
+          schema:
+            $ref: '#/definitions/response.ErrorResponseBody'
+        "500":
+          description: Operational failure (INTERNAL_SERVER_ERROR)
+          schema:
+            $ref: '#/definitions/response.ErrorResponseBody'
+        "503":
+          description: Verification capacity exhausted (AUTHENTICATION_UNAVAILABLE)
+          schema:
+            $ref: '#/definitions/response.ErrorResponseBody'
+      summary: Log in with email and password
+      tags:
+      - Authentication
+  /v1/auth/logout:
+    post:
+      description: Revokes and retains the current session. No request payload is
+        required. The revoked bearer is rejected on subsequent requests, including
+        repeated logout.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Session revoked; data is null
+          schema:
+            $ref: '#/definitions/response.SuccessResponseBody'
+        "401":
+          description: Invalid or no longer valid caller (UNAUTHORIZED)
+          schema:
+            $ref: '#/definitions/response.ErrorResponseBody'
+        "413":
+          description: Body too large (REQUEST_BODY_TOO_LARGE)
+          schema:
+            $ref: '#/definitions/response.ErrorResponseBody'
+        "415":
+          description: Unsupported media type (UNSUPPORTED_MEDIA_TYPE)
+          schema:
+            $ref: '#/definitions/response.ErrorResponseBody'
+        "500":
+          description: Operational failure (INTERNAL_SERVER_ERROR)
+          schema:
+            $ref: '#/definitions/response.ErrorResponseBody'
+      security:
+      - BearerAuth: []
+      summary: Log out the current session
+      tags:
+      - Authentication
+  /v1/auth/logout-all:
+    post:
+      description: Revokes active sessions for the authenticated user, including the
+        caller. No body identifiers control scope. Concurrent creation is serialized;
+        a fresh password login ordered after logout-all may create a new valid session.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: User sessions revoked; data is null
+          schema:
+            $ref: '#/definitions/response.SuccessResponseBody'
+        "401":
+          description: Invalid or no longer valid caller (UNAUTHORIZED)
+          schema:
+            $ref: '#/definitions/response.ErrorResponseBody'
+        "413":
+          description: Body too large (REQUEST_BODY_TOO_LARGE)
+          schema:
+            $ref: '#/definitions/response.ErrorResponseBody'
+        "415":
+          description: Unsupported media type (UNSUPPORTED_MEDIA_TYPE)
+          schema:
+            $ref: '#/definitions/response.ErrorResponseBody'
+        "500":
+          description: Operational failure (INTERNAL_SERVER_ERROR)
+          schema:
+            $ref: '#/definitions/response.ErrorResponseBody'
+      security:
+      - BearerAuth: []
+      summary: Log out all current user sessions
+      tags:
+      - Authentication
+  /v1/auth/me:
+    get:
+      description: Validates session expiry, revocation and user activation on every
+        request. Authentication grants no tenant or RBAC privileges.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.SuccessResponseBody'
+            - properties:
+                data:
+                  $ref: '#/definitions/responses.AuthUser'
+              type: object
+        "401":
+          description: Authentication required (UNAUTHORIZED)
+          schema:
+            $ref: '#/definitions/response.ErrorResponseBody'
+        "500":
+          description: Operational failure (INTERNAL_SERVER_ERROR)
+          schema:
+            $ref: '#/definitions/response.ErrorResponseBody'
+      security:
+      - BearerAuth: []
+      summary: Get the authenticated global user
+      tags:
+      - Authentication
+schemes:
+- http
+securityDefinitions:
+  BearerAuth:
+    description: 'Opaque bearer session token. Enter: Bearer <access_token>. This
+      authenticates global identity, without tenant permissions.'
+    in: header
+    name: Authorization
+    type: apiKey
+swagger: "2.0"
+tags:
+- description: Public health and readiness probes
+  name: Operations

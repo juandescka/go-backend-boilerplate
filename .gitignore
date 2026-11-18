@@ -1,0 +1,6 @@
+.env
+.env.production
+config.json
+config.production.json
+.bootstrap-admin-password
+.bootstra-admin-password

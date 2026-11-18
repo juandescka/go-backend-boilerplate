@@ -1,0 +1,9 @@
+# M7D-02 — Integration and security re-review after M7E
+
+**PASS for the approved v1.0 foundation.** This review supersedes the acceptance status in [M7D-01](M7D-01-review.md). The primary agent reran the impacted checks after the [M7E implementation review](M7E-01-review.md) passed.
+
+- `go build ./...`, `go vet ./...`, `go test -count=1 ./...` and `git diff --check` passed.
+- `M7_INTEGRATION=1 M7_STAGE=full go test -count=1 -run '^TestTenantRBACPostgresIntegration$' -v ./internal/infrastructure/migration` passed on PostgreSQL 17 in 1.48 seconds. It verified the matrix, fixed roles, existing schema and ownership constraints, authorization and bearer fixture, repeat apply, rollback and reapply, and preservation of M5/M6 data. The one-step 15→14 rollback retained user assignments and unrelated reference data. Later dependent mappings caused atomic rollback refusal. The fixture database was removed.
+- `M5B_INTEGRATION=1 M5B_CLI_BINARY=/private/tmp/mapatu-m7e-backend go test -count=1 -run '^TestAuthenticationPostgresIntegration$' -v ./internal/registry` passed in 3.99 seconds. The real CLI applied through 15 and reported no change on a second apply. Authentication, session expiry/revocation, concurrency, health/readiness, safe errors and Scalar spec checks passed. The suite rolled back and reapplied while retaining identity data. Owned database `m5b_verify_23d3fe9c72af3cca` was removed. The observed development catalog did not change.
+
+Hashes verified existing migrations 000001–000014 and the historical M7 review files. The route audit found no assignment-management writer. M7E seeds grants to fixed role definitions only. It seeds zero users, memberships or assignments. B3 is explicitly deferred and denied by the approved scope. Production business resource enforcement remains future endpoint work.

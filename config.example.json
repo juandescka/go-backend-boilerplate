@@ -1,0 +1,53 @@
+{
+  "app": {
+    "name": "hris-core-service",
+    "env": "development",
+    "port": 8080
+  },
+  "http": {
+    "readHeaderTimeoutSeconds": 5,
+    "readTimeoutSeconds": 15,
+    "writeTimeoutSeconds": 30,
+    "idleTimeoutSeconds": 60,
+    "shutdownTimeoutSeconds": 15,
+    "maxHeaderBytes": 65536,
+    "maxRequestBodyBytes": 1048576
+  },
+  "cors": {
+    "allowedOrigins": [],
+    "allowCredentials": false
+  },
+  "security": {
+    "JWTAuthKey": "",
+    "JWTAuthExpirationTimeInMinutes": 15,
+    "JWTRefreshExpirationTimeInMinutes": 10080
+  },
+  "database": {
+    "driver": "postgres",
+    "host": "127.0.0.1",
+    "port": 5432,
+    "name": "mapatu_dev",
+    "username": "mapatu",
+    "password": "",
+    "sslMode": "disable",
+    "maxOpenConnections": 25,
+    "maxIdleConnections": 10,
+    "maxLifetimeSeconds": 1800,
+    "maxIdleTime": 300,
+    "queryTimeoutSeconds": 5,
+    "transactionTimeoutSeconds": 10,
+    "slowQueryThresholdMilliseconds": 500,
+    "dbDebug": false
+  },
+  "redis": {
+    "enabled": false
+  },
+  "metrics": {
+    "enabled": false,
+    "path": "/metrics",
+    "namespace": "hris_core_service"
+  },
+  "authentication": {
+    "sessionLifetimeMinutes": 15
+  }
+}

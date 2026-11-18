@@ -1,0 +1,1 @@
+DROP INDEX auth_sessions_token_hash_uidx;

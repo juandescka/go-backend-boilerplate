@@ -1,0 +1,5 @@
+# M7D-01 — Integration and security verification
+
+Approved by the M7 request and recovered user contract. M7A/B schema PASS; [M7C](../../reviews/tenant-access-rbac/M7C-01-review.md) foundation PASS with business acceptance BLOCKED. The recovery explicitly authorizes continuing safe integration despite missing policy.
+
+Verify all five tables and exact column/null/default/FK/index contracts, four assignment scopes, scope/role mutation rejection, multi-tenant identities, synthetic permission mechanics, request context, no inheritance, no platform bypass, immediate revocation and fail-closed paths. Use new owned disposable PostgreSQL17 databases only. Execute actual current CLI auth/session/health/Scalar regression with all14 migrations; preserve existing checks and database cleanup. Run build/vet/default tests, formatting/diff/link checks and review final source separately. Do not count fixture permissions as approval of business grants. Record unresolved acceptance honestly; no development migrations, staging, commit or M8 implementation.

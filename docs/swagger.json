@@ -1,0 +1,481 @@
+{
+    "schemes": [
+        "http"
+    ],
+    "swagger": "2.0",
+    "info": {
+        "description": "Mapatu HRIS operational API and global identity authentication foundation.",
+        "title": "Mapatu Backend API",
+        "contact": {
+            "name": "Juan Descka",
+            "email": "juandescka@gmail.com"
+        },
+        "version": "1.0"
+    },
+    "basePath": "/",
+    "paths": {
+        "/health": {
+            "get": {
+                "description": "Returns the liveness status without checking dependencies.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Operations"
+                ],
+                "summary": "Check application health",
+                "responses": {
+                    "200": {
+                        "description": "Application is healthy",
+                        "schema": {
+                            "$ref": "#/definitions/response.SuccessResponseBody"
+                        }
+                    }
+                }
+            }
+        },
+        "/ready": {
+            "get": {
+                "description": "Returns readiness after a bounded primary database check.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Operations"
+                ],
+                "summary": "Check application readiness",
+                "responses": {
+                    "200": {
+                        "description": "Application is ready",
+                        "schema": {
+                            "$ref": "#/definitions/response.SuccessResponseBody"
+                        }
+                    },
+                    "503": {
+                        "description": "Service is not ready (SERVICE_NOT_READY)",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponseBody"
+                        }
+                    }
+                }
+            }
+        },
+        "/v1/auth/login": {
+            "post": {
+                "description": "Returns a database-backed opaque bearer token. Process-local IP and normalized-identifier attempt limits return 429 with Retry-After in seconds. Requires deployed identity migrations; no registration or default account exists.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Authentication"
+                ],
+                "summary": "Log in with email and password",
+                "parameters": [
+                    {
+                        "description": "Email and password",
+                        "name": "credentials",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/requests.LoginRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.SuccessResponseBody"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/responses.LoginResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Malformed JSON (BAD_REQUEST)",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponseBody"
+                        }
+                    },
+                    "401": {
+                        "description": "Invalid email or password (UNAUTHORIZED)",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponseBody"
+                        }
+                    },
+                    "413": {
+                        "description": "Body too large (REQUEST_BODY_TOO_LARGE)",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponseBody"
+                        }
+                    },
+                    "415": {
+                        "description": "Unsupported media type (UNSUPPORTED_MEDIA_TYPE)",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponseBody"
+                        }
+                    },
+                    "422": {
+                        "description": "Invalid credentials input (VALIDATION_FAILED)",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponseBody"
+                        }
+                    },
+                    "429": {
+                        "description": "Login throttled (RATE_LIMIT_EXCEEDED); Retry-After header gives whole seconds",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponseBody"
+                        }
+                    },
+                    "500": {
+                        "description": "Operational failure (INTERNAL_SERVER_ERROR)",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponseBody"
+                        }
+                    },
+                    "503": {
+                        "description": "Verification capacity exhausted (AUTHENTICATION_UNAVAILABLE)",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponseBody"
+                        }
+                    }
+                }
+            }
+        },
+        "/v1/auth/logout": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Revokes and retains the current session. No request payload is required. The revoked bearer is rejected on subsequent requests, including repeated logout.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Authentication"
+                ],
+                "summary": "Log out the current session",
+                "responses": {
+                    "200": {
+                        "description": "Session revoked; data is null",
+                        "schema": {
+                            "$ref": "#/definitions/response.SuccessResponseBody"
+                        }
+                    },
+                    "401": {
+                        "description": "Invalid or no longer valid caller (UNAUTHORIZED)",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponseBody"
+                        }
+                    },
+                    "413": {
+                        "description": "Body too large (REQUEST_BODY_TOO_LARGE)",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponseBody"
+                        }
+                    },
+                    "415": {
+                        "description": "Unsupported media type (UNSUPPORTED_MEDIA_TYPE)",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponseBody"
+                        }
+                    },
+                    "500": {
+                        "description": "Operational failure (INTERNAL_SERVER_ERROR)",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponseBody"
+                        }
+                    }
+                }
+            }
+        },
+        "/v1/auth/logout-all": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Revokes active sessions for the authenticated user, including the caller. No body identifiers control scope. Concurrent creation is serialized; a fresh password login ordered after logout-all may create a new valid session.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Authentication"
+                ],
+                "summary": "Log out all current user sessions",
+                "responses": {
+                    "200": {
+                        "description": "User sessions revoked; data is null",
+                        "schema": {
+                            "$ref": "#/definitions/response.SuccessResponseBody"
+                        }
+                    },
+                    "401": {
+                        "description": "Invalid or no longer valid caller (UNAUTHORIZED)",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponseBody"
+                        }
+                    },
+                    "413": {
+                        "description": "Body too large (REQUEST_BODY_TOO_LARGE)",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponseBody"
+                        }
+                    },
+                    "415": {
+                        "description": "Unsupported media type (UNSUPPORTED_MEDIA_TYPE)",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponseBody"
+                        }
+                    },
+                    "500": {
+                        "description": "Operational failure (INTERNAL_SERVER_ERROR)",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponseBody"
+                        }
+                    }
+                }
+            }
+        },
+        "/v1/auth/me": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Validates session expiry, revocation and user activation on every request. Authentication grants no tenant or RBAC privileges.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Authentication"
+                ],
+                "summary": "Get the authenticated global user",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.SuccessResponseBody"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/responses.AuthUser"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "401": {
+                        "description": "Authentication required (UNAUTHORIZED)",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponseBody"
+                        }
+                    },
+                    "500": {
+                        "description": "Operational failure (INTERNAL_SERVER_ERROR)",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponseBody"
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "definitions": {
+        "dtos.FilterResponse": {
+            "type": "object",
+            "properties": {
+                "isActive": {
+                    "type": "boolean"
+                },
+                "role": {
+                    "type": "string"
+                }
+            }
+        },
+        "dtos.PaginationResponse": {
+            "type": "object",
+            "properties": {
+                "has_next": {
+                    "type": "boolean"
+                },
+                "has_previous": {
+                    "type": "boolean"
+                },
+                "limit": {
+                    "type": "integer"
+                },
+                "next_url": {
+                    "type": "string"
+                },
+                "page": {
+                    "type": "integer"
+                },
+                "prev_url": {
+                    "type": "string"
+                },
+                "total": {
+                    "type": "integer"
+                }
+            }
+        },
+        "dtos.SortingResponse": {
+            "type": "object",
+            "properties": {
+                "direction": {
+                    "type": "string"
+                },
+                "order_by": {
+                    "type": "string"
+                }
+            }
+        },
+        "requests.LoginRequest": {
+            "type": "object",
+            "required": [
+                "email",
+                "password"
+            ],
+            "properties": {
+                "email": {
+                    "type": "string",
+                    "example": "user@example.com"
+                },
+                "password": {
+                    "type": "string",
+                    "format": "password",
+                    "example": "\u003cpassword\u003e"
+                }
+            }
+        },
+        "response.ErrorBody": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "string"
+                },
+                "details": {},
+                "message": {
+                    "type": "string"
+                }
+            }
+        },
+        "response.ErrorResponseBody": {
+            "type": "object",
+            "properties": {
+                "error": {
+                    "$ref": "#/definitions/response.ErrorBody"
+                }
+            }
+        },
+        "response.ResponseMeta": {
+            "type": "object",
+            "properties": {
+                "filters": {
+                    "$ref": "#/definitions/dtos.FilterResponse"
+                },
+                "pagination": {
+                    "$ref": "#/definitions/dtos.PaginationResponse"
+                },
+                "sorting": {
+                    "$ref": "#/definitions/dtos.SortingResponse"
+                }
+            }
+        },
+        "response.SuccessResponseBody": {
+            "type": "object",
+            "properties": {
+                "data": {},
+                "message": {
+                    "type": "string"
+                },
+                "meta": {
+                    "$ref": "#/definitions/response.ResponseMeta"
+                },
+                "success": {
+                    "type": "boolean"
+                }
+            }
+        },
+        "responses.AuthUser": {
+            "type": "object",
+            "properties": {
+                "display_name": {
+                    "type": "string",
+                    "example": "Example User"
+                },
+                "email": {
+                    "type": "string",
+                    "example": "user@example.com"
+                },
+                "email_verified_at": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string",
+                    "example": "00000000-0000-4000-8000-000000000001"
+                }
+            }
+        },
+        "responses.LoginResponse": {
+            "type": "object",
+            "properties": {
+                "access_token": {
+                    "type": "string",
+                    "example": "\u003copaque-access-token\u003e"
+                },
+                "expires_at": {
+                    "type": "string"
+                },
+                "token_type": {
+                    "type": "string",
+                    "example": "Bearer"
+                },
+                "user": {
+                    "$ref": "#/definitions/responses.AuthUser"
+                }
+            }
+        }
+    },
+    "securityDefinitions": {
+        "BearerAuth": {
+            "description": "Opaque bearer session token. Enter: Bearer \u003caccess_token\u003e. This authenticates global identity, without tenant permissions.",
+            "type": "apiKey",
+            "name": "Authorization",
+            "in": "header"
+        }
+    },
+    "tags": [
+        {
+            "description": "Public health and readiness probes",
+            "name": "Operations"
+        }
+    ]
+}
